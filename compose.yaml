@@ -1,0 +1,24 @@
+services:
+  database:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: labsignal
+    ports: ["127.0.0.1:54838:5432"]
+    volumes: ["database:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo -d labsignal"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://demo:demo@database/labsignal
+      API_KEY: local-demo-key
+    ports: ["127.0.0.1:8098:8000"]
+    depends_on:
+      database: {condition: service_healthy}
+volumes:
+  database:

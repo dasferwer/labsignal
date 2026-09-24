@@ -1,0 +1,42 @@
+name: Проверки
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: demo
+          POSTGRES_PASSWORD: demo
+          POSTGRES_DB: labsignal
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U demo -d labsignal"
+          --health-interval 2s --health-timeout 2s --health-retries 30
+    env:
+      DATABASE_URL: postgresql://demo:demo@localhost:5432/labsignal
+      API_KEY: test-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.17"
+          python-version: "3.11"
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+      - run: uv run python -m scripts.simulate
+      - run: docker compose up --build -d
+      - name: Полный цикл эксперимента через API
+        run: |
+          for attempt in $(seq 1 60); do
+            curl -fsS -H 'X-API-Key: local-demo-key' http://localhost:8098/health && break
+            sleep 2
+          done
+          uv run python -m scripts.demo
+      - if: always()
+        run: docker compose down
