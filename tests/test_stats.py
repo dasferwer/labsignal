@@ -32,3 +32,14 @@ def test_fixed_cuped_coefficient_reduces_noise():
     adjusted = analyze(a, b, theta=1)
     assert abs(adjusted["revenue_cuped"]["effect"] - 1) < 0.2
     assert adjusted["revenue_cuped"]["significant"]
+
+
+def test_effect_intervals_and_degenerate_variance():
+    from labsignal.stats import analyze
+
+    a = [{"converted": False, "revenue": 0, "pre_value": 0} for _ in range(20)]
+    b = [{"converted": True, "revenue": 1, "pre_value": 0} for _ in range(20)]
+    result = analyze(a, b)
+    assert result["conversion"]["interval"][0] > 0
+    assert result["revenue_cuped"]["interval"] is None
+    assert not result["revenue_cuped"]["significant"]

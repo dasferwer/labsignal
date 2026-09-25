@@ -28,4 +28,11 @@ def init():
             CREATE TABLE IF NOT EXISTS reports (
                 experiment uuid REFERENCES experiments(id), look integer NOT NULL, report jsonb NOT NULL,
                 created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(experiment,look));
+            ALTER TABLE assignments ADD COLUMN IF NOT EXISTS pre_period_end timestamptz;
+            CREATE TABLE IF NOT EXISTS pilots (
+                id uuid PRIMARY KEY,ended_at timestamptz NOT NULL,snapshot jsonb NOT NULL,
+                digest text NOT NULL,theta double precision NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+            CREATE TABLE IF NOT EXISTS protocols (
+                experiment uuid PRIMARY KEY REFERENCES experiments(id),snapshot jsonb NOT NULL,
+                digest text NOT NULL,prospective boolean NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
         """)

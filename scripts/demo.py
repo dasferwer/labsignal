@@ -14,13 +14,14 @@ with httpx.Client(base_url=base, headers={"X-API-Key": "local-demo-key"}, timeou
         "/experiments",
         json={
             "namespace": "demo-" + uuid.uuid4().hex[:8],
-            "starts_at": (now - timedelta(seconds=1)).isoformat(),
+            "starts_at": (now + timedelta(seconds=1)).isoformat(),
             "ends_at": end.isoformat(),
             "outcome_seconds": 3,
         },
     )
     response.raise_for_status()
     identity = response.json()["id"]
+    time.sleep(max(0, (now + timedelta(seconds=1.1) - datetime.now(UTC)).total_seconds()))
     counts = {"A": 0, "B": 0}
     index = 0
     while min(counts.values()) < 2:

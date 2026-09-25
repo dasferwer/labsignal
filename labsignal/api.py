@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import secrets
 import uuid
@@ -6,6 +7,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
+import numpy as np
 from fastapi import Depends, FastAPI, Header, HTTPException
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field, model_validator
@@ -30,6 +32,7 @@ app = FastAPI(title="LabSignal", lifespan=lifespan, dependencies=[Depends(author
 
 
 class Experiment(BaseModel):
+    pilot_id: uuid.UUID | None = None
     namespace: str = Field(min_length=1, max_length=80)
     starts_at: datetime
     ends_at: datetime
@@ -88,6 +91,18 @@ def create(body: Experiment):
         ).fetchone()
         if overlap:
             raise HTTPException(409, "В этом пространстве уже есть пересекающийся эксперимент")
+        theta = body.theta
+        if body.pilot_id:
+            pilot = conn.execute("SELECT * FROM pilots WHERE id=%s", (body.pilot_id,)).fetchone()
+            if pilot is None or pilot["ended_at"] > body.starts_at:
+                raise HTTPException(
+                    422, "Пилот должен существовать и завершиться до начала эксперимента"
+                )
+            if body.theta != 0:
+                raise HTTPException(422, "При выборе пилота theta рассчитывается сервисом")
+            theta = pilot["theta"]
+        elif body.theta != 0:
+            raise HTTPException(422, "Для CUPED нужен независимый пилот вместо произвольного theta")
         conn.execute(
             "INSERT INTO experiments VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
@@ -98,11 +113,25 @@ def create(body: Experiment):
                 body.outcome_seconds,
                 body.mode,
                 body.looks,
-                body.theta,
+                theta,
                 secrets.token_hex(16),
             ),
         )
-    return {"id": identity}
+        protocol = {
+            **body.model_dump(mode="json"),
+            "theta": theta,
+            "assignment": "sha256-50-50",
+            "metrics": ["conversion", "revenue_cuped"],
+            "multiplicity": "Holm; alpha/K для planned",
+            "outcome": "один пользователь — одно наблюдение; учитываются фактические показы",
+        }
+        digest = hashlib.sha256(json.dumps(protocol, sort_keys=True).encode()).hexdigest()
+        prospective = body.starts_at >= datetime.now(UTC)
+        conn.execute(
+            "INSERT INTO protocols(experiment,snapshot,digest,prospective) VALUES (%s,%s,%s,%s)",
+            (identity, Jsonb(protocol), digest, prospective),
+        )
+    return {"id": identity, "protocol_sha256": digest, "prospective": prospective}
 
 
 @app.post("/experiments/{identity}/assign")
@@ -133,11 +162,15 @@ def expose(identity: uuid.UUID, body: Exposure):
         ).fetchone()
         if not assignment:
             raise HTTPException(409, "Сначала получите вариант")
-        if assignment["exposed_at"] and assignment["pre_value"] != body.pre_value:
+        if assignment["exposed_at"] and (
+            assignment["pre_value"] != body.pre_value
+            or assignment["pre_period_end"] is not None
+            and assignment["pre_period_end"] != body.pre_period_end
+        ):
             raise HTTPException(409, "Показ уже зафиксирован с другой ковариатой")
         conn.execute(
-            "UPDATE assignments SET exposed_at=COALESCE(exposed_at,%s),pre_value=%s WHERE experiment=%s AND user_id=%s",
-            (now, body.pre_value, identity, body.user_id),
+            "UPDATE assignments SET exposed_at=COALESCE(exposed_at,%s),pre_value=%s,pre_period_end=%s WHERE experiment=%s AND user_id=%s",
+            (now, body.pre_value, body.pre_period_end, identity, body.user_id),
         )
     return {"variant": assignment["variant"], "exposed": True}
 
@@ -150,6 +183,7 @@ def metric(identity: uuid.UUID, body: Metric):
             "SELECT * FROM assignments WHERE experiment=%s AND user_id=%s FOR UPDATE",
             (identity, body.user_id),
         ).fetchone()
+        conn.execute("SELECT pg_advisory_xact_lock(380030,%s)", (body.id.int % (2**31 - 1),))
         old = conn.execute(
             "SELECT experiment,user_id,amount FROM events WHERE id=%s", (body.id,)
         ).fetchone()
@@ -173,7 +207,7 @@ def metric(identity: uuid.UUID, body: Metric):
 @app.get("/experiments/{identity}/results")
 def results(identity: uuid.UUID):
     with connect() as conn:
-        conn.execute("SELECT pg_advisory_xact_lock(380028)")
+        conn.execute("SELECT pg_advisory_xact_lock(380031,%s)", (identity.int % (2**31 - 1),))
         experiment = get(conn, identity)
         now = datetime.now(UTC)
         if experiment["mode"] == "fixed" and now < experiment["ends_at"] + timedelta(
@@ -232,6 +266,17 @@ def results(identity: uuid.UUID):
                 },
             }
         )
+        protocol = conn.execute(
+            "SELECT digest,prospective FROM protocols WHERE experiment=%s", (identity,)
+        ).fetchone()
+        report["protocol_sha256"] = protocol["digest"] if protocol else None
+        report["prospective"] = bool(protocol and protocol["prospective"])
+        if not report["prospective"]:
+            report["decision_note"] = (
+                "Ретроспективная регистрация: только описательный отчёт, подтверждающий вывод заблокирован"
+            )
+            report["conversion"]["significant"] = False
+            report["revenue_cuped"]["significant"] = False
         conn.execute(
             "INSERT INTO reports(experiment,look,report) VALUES (%s,%s,%s)",
             (identity, look, Jsonb(report)),
@@ -244,3 +289,47 @@ def health():
     with connect() as conn:
         conn.execute("SELECT 1")
     return {"status": "ok"}
+
+
+class PilotRow(BaseModel):
+    pre_value: float = Field(ge=0, le=1e9, allow_inf_nan=False)
+    revenue: float = Field(ge=0, le=1e9, allow_inf_nan=False)
+
+
+class Pilot(BaseModel):
+    ended_at: datetime
+    rows: list[PilotRow] = Field(min_length=20, max_length=10000)
+
+
+@app.post("/pilots")
+def pilot(body: Pilot):
+    if body.ended_at.tzinfo is None or body.ended_at > datetime.now(UTC):
+        raise HTTPException(422, "Пилот должен завершиться в прошлом")
+    x = np.array([r.pre_value for r in body.rows])
+    y = np.array([r.revenue for r in body.rows])
+    if np.var(x) == 0:
+        raise HTTPException(422, "В пилоте нет вариации ковариаты")
+    theta = float(np.cov(x, y, ddof=0)[0, 1] / np.var(x))
+    if not np.isfinite(theta) or abs(theta) > 100:
+        raise HTTPException(422, "Нестабильный коэффициент CUPED")
+    snapshot = body.model_dump(mode="json")
+    digest = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
+    identity = uuid.uuid4()
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO pilots(id,ended_at,snapshot,digest,theta) VALUES (%s,%s,%s,%s,%s)",
+            (identity, body.ended_at, Jsonb(snapshot), digest, theta),
+        )
+    return {"id": identity, "theta": theta, "sha256": digest, "observations": len(body.rows)}
+
+
+@app.get("/experiments/{identity}/protocol")
+def protocol(identity: uuid.UUID):
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT snapshot,digest,prospective,created_at FROM protocols WHERE experiment=%s",
+            (identity,),
+        ).fetchone()
+    if row is None:
+        raise HTTPException(404, "Протокол не найден для этого запуска")
+    return row
