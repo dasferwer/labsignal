@@ -1,0 +1,16 @@
+{
+  "seed": 381009,
+  "trials": 400,
+  "assigned_per_arm": 600,
+  "planned_looks": [200, 400, 600],
+  "null_conversion_probability": 0.15,
+  "regimes": [
+    "independent_gamma",
+    "heavy_tail_lognormal",
+    "allocation_75_25",
+    "dropout_mcar_25pct",
+    "dropout_outcome_selected_balanced",
+    "wrong_independent_pilot"
+  ],
+  "selection_frozen_before_results": true
+}

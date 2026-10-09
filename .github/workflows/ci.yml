@@ -30,6 +30,8 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pytest -q
       - run: uv run python -m scripts.simulate
+      - name: Зафиксированные null-режимы fixed и planned
+        run: uv run python -m scripts.simulate_regimes
       - run: docker compose up --build -d
       - name: Полный цикл эксперимента через API
         run: |

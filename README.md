@@ -97,6 +97,7 @@ uv run ruff check .
 uv run ruff format --check .
 uv run pytest -q
 uv run python -m scripts.simulate
+uv run python -m scripts.simulate_regimes
 ```
 
 Тесты используют временные схемы PostgreSQL. Проверяются повторы, фактические
@@ -107,6 +108,8 @@ uv run python -m scripts.simulate
 конверсии с 15% до 25%, по 600 пользователей в группе. Для частоты выводов
 приводится биномиальный доверительный интервал. CI выполняет тесты, симуляции
 и полный сценарий через Docker API.
+
+Дополнительные frozen null-режимы и отдельные частоты fixed/planned с95%интервалами: [отчёт](docs/simulation-regimes.md). Balanced outcome-dependent dropout даёт400/400 ложных выводов при успешном SRM: происхождение зрелых показов остаётся существенной границей.
 
 ## Структура и ограничения
 

@@ -1,0 +1,352 @@
+{
+  "protocol": {
+    "seed": 381009,
+    "trials": 400,
+    "assigned_per_arm": 600,
+    "planned_looks": [
+      200,
+      400,
+      600
+    ],
+    "null_conversion_probability": 0.15,
+    "regimes": [
+      "independent_gamma",
+      "heavy_tail_lognormal",
+      "allocation_75_25",
+      "dropout_mcar_25pct",
+      "dropout_outcome_selected_balanced",
+      "wrong_independent_pilot"
+    ],
+    "selection_frozen_before_results": true
+  },
+  "protocol_sha256": "3e73e9f6f3b03ee26de7cced7e9b38a36cec00cc9599730c5b7029a10dcabcf1",
+  "script_sha256": "e101fa8c0d61dc56278d1bcce2e66c95c3cc00f1650ed5d4931e93562f1886b2",
+  "results": [
+    {
+      "regime": "independent_gamma",
+      "fixed": {
+        "false_conclusions": {
+          "count": 14,
+          "trials": 400,
+          "rate": 0.035,
+          "interval_95": [
+            0.019264466585879915,
+            0.05802726168241614
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        }
+      },
+      "planned": {
+        "false_conclusions": {
+          "count": 13,
+          "trials": 400,
+          "rate": 0.0325,
+          "interval_95": [
+            0.017416146084212138,
+            0.05493481675069275
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        },
+        "unavailable_looks": 0
+      },
+      "mean_theta": 0.7999594947930428,
+      "observed_n_min": [
+        600,
+        600
+      ],
+      "observed_n_max": [
+        600,
+        600
+      ],
+      "population_effect": 0
+    },
+    {
+      "regime": "heavy_tail_lognormal",
+      "fixed": {
+        "false_conclusions": {
+          "count": 16,
+          "trials": 400,
+          "rate": 0.04,
+          "interval_95": [
+            0.023033395740548888,
+            0.06414601093905078
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        }
+      },
+      "planned": {
+        "false_conclusions": {
+          "count": 6,
+          "trials": 400,
+          "rate": 0.015,
+          "interval_95": [
+            0.00552410950458066,
+            0.03236129448077503
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        },
+        "unavailable_looks": 0
+      },
+      "mean_theta": 0.8003034666990225,
+      "observed_n_min": [
+        600,
+        600
+      ],
+      "observed_n_max": [
+        600,
+        600
+      ],
+      "population_effect": 0
+    },
+    {
+      "regime": "allocation_75_25",
+      "fixed": {
+        "false_conclusions": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        },
+        "srm_rejections": {
+          "count": 400,
+          "trials": 400,
+          "rate": 1.0,
+          "interval_95": [
+            0.9908201954163347,
+            1.0
+          ]
+        }
+      },
+      "planned": {
+        "false_conclusions": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        },
+        "srm_rejections": {
+          "count": 400,
+          "trials": 400,
+          "rate": 1.0,
+          "interval_95": [
+            0.9908201954163347,
+            1.0
+          ]
+        },
+        "unavailable_looks": 800
+      },
+      "mean_theta": 0.7999324648347219,
+      "observed_n_min": [
+        900,
+        300
+      ],
+      "observed_n_max": [
+        900,
+        300
+      ],
+      "population_effect": 0
+    },
+    {
+      "regime": "dropout_mcar_25pct",
+      "fixed": {
+        "false_conclusions": {
+          "count": 21,
+          "trials": 400,
+          "rate": 0.0525,
+          "interval_95": [
+            0.032788424577153724,
+            0.0791346304869442
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        }
+      },
+      "planned": {
+        "false_conclusions": {
+          "count": 10,
+          "trials": 400,
+          "rate": 0.025,
+          "interval_95": [
+            0.012052120113185932,
+            0.04549427929878008
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        },
+        "unavailable_looks": 400
+      },
+      "mean_theta": 0.8001552082197299,
+      "observed_n_min": [
+        419,
+        424
+      ],
+      "observed_n_max": [
+        476,
+        481
+      ],
+      "population_effect": 0
+    },
+    {
+      "regime": "dropout_outcome_selected_balanced",
+      "fixed": {
+        "false_conclusions": {
+          "count": 400,
+          "trials": 400,
+          "rate": 1.0,
+          "interval_95": [
+            0.9908201954163347,
+            1.0
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        }
+      },
+      "planned": {
+        "false_conclusions": {
+          "count": 400,
+          "trials": 400,
+          "rate": 1.0,
+          "interval_95": [
+            0.9908201954163347,
+            1.0
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        },
+        "unavailable_looks": 800
+      },
+      "mean_theta": 0.7995795750321925,
+      "observed_n_min": [
+        360,
+        360
+      ],
+      "observed_n_max": [
+        360,
+        360
+      ],
+      "population_effect": 0
+    },
+    {
+      "regime": "wrong_independent_pilot",
+      "fixed": {
+        "false_conclusions": {
+          "count": 17,
+          "trials": 400,
+          "rate": 0.0425,
+          "interval_95": [
+            0.024949619202114772,
+            0.06717611443869691
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        }
+      },
+      "planned": {
+        "false_conclusions": {
+          "count": 18,
+          "trials": 400,
+          "rate": 0.045,
+          "interval_95": [
+            0.026884625615141773,
+            0.07018879549534222
+          ]
+        },
+        "srm_rejections": {
+          "count": 0,
+          "trials": 400,
+          "rate": 0.0,
+          "interval_95": [
+            0.0,
+            0.009179804583665262
+          ]
+        },
+        "unavailable_looks": 0
+      },
+      "mean_theta": -0.8000796374481213,
+      "observed_n_min": [
+        600,
+        600
+      ],
+      "observed_n_max": [
+        600,
+        600
+      ],
+      "population_effect": 0
+    }
+  ],
+  "seconds": 7.543874084003619,
+  "numpy": "2.5.3"
+}
